@@ -67,6 +67,15 @@ function cosine(hypotenusa,a,b)
 	return (-Math.pow(hypotenusa,2)+Math.pow(a,2)+Math.pow(b,2))/(2*a*b);
 }
 
+function next_estimate(L5, AD, x, y, z)
+{
+	var y2 = y-AD;
+	vec_AD = [0,-AD, 0];
+	vec_B5_A = [x,y,z];
+	vec_B5_D = [x,y-AD,z];
+
+}
+
 function find_vecA(B0,R,BA)
 {
 	var cosBA = cosine(BA,B0,R);
@@ -75,15 +84,6 @@ function find_vecA(B0,R,BA)
 	return polar_vector(R,theta,Math.PI/2);
 }
 
-/* find an better estimate for BA, given estimates for vecA and vecD,
-	satisfying given values for vecB5 and BD
-*/
-function estimate_BA(BD,vecB5,vecA,vecD)
-{
-		vecAB = vecB5.minus(vecA);
-	        vecDB = vecB5.minus(vecD);
-		return vecAB.ip(vecD.minus(vecA))/vecAB.norm() + vecAB.cos(vecDB)*BD;
-}
 /** param {number} nIterations - an integer
 * param {number} B0 - 
 * param {number} R
@@ -101,12 +101,14 @@ function solveB5(nIterations, B0,R,BD,vecAD)
 		infoText += "iteration = "+ i+"<br>";
 		var vecA = find_vecA(B0,R,BA);	
 		var vecD = vecA.plus(vecAD); // this will be more complicated function later
-		// set new BA for better approximation
-		BA = estimate_BA(BD,vecB5,vecA,vecD);
 
 		infoText += "A: "+vecA.ordinates()+" <br>";
 		infoText += "D: "+vecD.ordinates()+" <br>";
 
+		// set new BA for better approximation
+		vecAB = vecB5.minus(vecA);
+	        vecDB = vecB5.minus(vecD);
+		BA = vecAB.ip(vecAD)/vecAB.norm() + vecAB.cos(vecDB)*BD;
 		infoText += "BA: "+BA+" <hr>";
 	}
 	return infoText;

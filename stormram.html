@@ -5,10 +5,11 @@
 <h2>JavaScript Arrays</h2>
 
 <p id="pict_out">
-<svg id="3Dscreen" width="200" height="200" viewbox="-200 -200 200 200">
-  <circle cx="-50" cy="-170" r="40" stroke="green" stroke-width="4" fill="yellow" />
+<svg id="3Dscreen" width="400" height="400" viewbox="-200 -200 400 400" onmousedown='alert("mouse down in svg! good!")'>
+  <circle id="center" cx="-0" cy="00" r="4" stroke="#999" stroke-width="4" fill="green" />
 </svg>
 </p>
+<p id="message">Hier kan een foutmelding komen </p><hr>
 <p id="text_out"></p>
 
 <script>
@@ -98,7 +99,7 @@ function line_object(svg_object, id, start, end)
 	this.start = start;
 	this.end = end;
 
-	this.Mproject = [ [1,0,0],[0,1,0]]; // project on x-y plane
+	// this.Mproject = [ [0,1,0],[0,0,z]]; // project on x-y plane
 	// create
 	// append
 
@@ -227,21 +228,13 @@ function Matrix_multiply(M1,M2)
 }
 /* perform repeated small rotation around x and z axis
 */
-function Matrix_rotate(M_in,nTheta,nPhi)
+function Matrix_rotate(M_in,nPhi,nTheta)
 {
-	var delta = 0.05 ;// standard angle of rotation, in radians
-	var N = nTheta;
-	if (nPhi<nTheta)
-	{
-		delta1 = delta;
-		delta2 = delta * nPhi/nTheta;
-	}
-	else
-	{	
-		N = nPhi;
-		delta1 = delta * nTheta/nPhi;
-		delta2 = delta;
-	}
+	var N = 20; // 20 small rotations along 2 different axes
+	
+	var delta = 0.02 ;// standard angle of rotation, in radians
+	delta1 = delta * nTheta/N;
+	delta2 = delta * nPhi/N;
 	cosT = Math.cos(delta1);
 	sinT = Math.sin(delta1);
 	cosP = Math.cos(delta2);
@@ -249,9 +242,11 @@ function Matrix_rotate(M_in,nTheta,nPhi)
 
 	// the generators of the rotations
 	// = matrices for small rotations
-	M_theta = [ [ cosT, -sinT  , 0],
-		    [ sinT , cosT  , 0],
+	// theta: rotate along z axis 
+	M_theta = [ [ cosT, sinT  , 0],
+		    [ -sinT , cosT  , 0],
 		    [     0,   0   , 1] ];
+	// phi: rotate along y axis
 	M_phi = [ [ cosP, 0, sinP],
 		  [ 0,    1,   0 ],
 		  [ -sinP,0, cosP] ];
@@ -277,7 +272,7 @@ function vector_to_matrix(vector)
 }
 
 var svgNameSpace = "http://www.w3.org/2000/svg";
-var svg = document.getElementById("3Dscreen"); //Get svg element
+ var svg = document.getElementById("3Dscreen"); //Get svg element
 
 function lineSegment(from,to, color)
    {
@@ -295,7 +290,7 @@ function lineSegment(from,to, color)
 	this.element = document.createElementNS(svgNameSpace, 'path'); //Create a path in SVG's namespace
 	this.element.style.stroke = color; //Set stroke colour
 	this.element.style.strokeWidth = "5px"; //Set stroke width
-	this.element.setAttribute("d","M 0 0 L 100 100"); //Set path's data
+	// this.element.setAttribute("d","M 0 0 L 100 100"); //Set path's data
 	svg.appendChild(this.element);
    	
 	
@@ -312,6 +307,7 @@ function lineSegment(from,to, color)
    		var to = Matrix_subtract(this.to,vector_to_matrix(center));
    			to = Matrix_multiply(M_rotation,to);
 		var pathDef = "M "+from[0][0]+" "+from[1][0]+" "+to[0][0]+" "+to[1][0]+" ";
+   // alert ("from is "+Matrix_display(from)+"to is "+Matrix_display(to)+ "center is" + Matrix_display(center)+"<br>Pathdef is " + pathDef);
 		this.element.setAttribute("d",pathDef); //Set path's data
 	}
    		
@@ -363,24 +359,42 @@ function solveB5(nIterations, B0,R,BD,vecAD)
 
 
 displayText = "";
-var Mat_I =	[ [ -1,  0  , 0],
-	[   0, 1  , 0],
-	[   0,   0   , 1] ];
-var Mat_projection =	[ [ 1,  0  , 0],
+
+function svgObjects()
+{
+   // because positive y is down on the screen
+this.Mat_orient =	[ [ 1,  0  , 0],
+	[   0, -1  , 0],
+	[   0,   0   , 1] ];  
+this.Mat_projection =	[ [ 0,  0  , 1],
 	[   0, 1  , 0],
 	[   0,   0   , 0] ];
 
-var center = [-50,80,0]
-var x_axis = new lineSegment([20,40,0],[80,40,0],"#F00");
-var y_axis = new lineSegment([20,40,0],[20,100,0],"#080");
-var z_axis = new lineSegment([20,40,0],[20,40,60],"#008");
-Mat_projection = Matrix_multiply(Mat_projection,Matrix_rotate(Mat_I, 5,10));
-x_axis.project(Mat_projection,center);
-y_axis.project(Mat_projection,center);
-z_axis.project(Mat_projection,center);
+this.center = [20,40,0]
 
-displayText += "Mat_projection is <br>" + Matrix_display(Mat_projection) + "<hr>";
+this.segments = []; // array of lineSegments
 
+this.segments[this.segments.length] = new lineSegment([20,40,0],[80,40,0],"#F00");
+this.segments[this.segments.length] = new lineSegment([20,40,0],[20,100,0],"#080");
+
+this.segments[this.segments.length] = new lineSegment([20,40,0],[20,40,60],"#008");
+
+	this.rotate = function(down,right)
+	{
+		// Mat_projection = Matrix_multiply(this.Mat_projection,this.Mat_orient);
+
+		this.Mat_orient = Matrix_rotate(this.Mat_orient, down,right);
+		let Mat_projection = Matrix_multiply(this.Mat_projection,this.Mat_orient);
+   		for( let i = 0; i<this.segments.length; i++)
+   		{
+		this.segments[i].project(Mat_projection,this.center);
+   		}
+	
+	}
+	this.alert = function()
+	{ alert ( "Mat_projection is <br>" + Matrix_display(this.Mat_projection) + "<hr>");
+	}
+}
 
 //var vecO = new vector(0,0,0);
 var vectorA = new vector(0,10,3);
@@ -406,6 +420,42 @@ displayText += solveB5(20, B0,R,BD,vectorAD).text;
 
 document.getElementById("text_out").innerHTML = displayText;
 
+testSVG = new svgObjects();
+var mouseX, mouseY;
+
+function rotateSVG(down,right)
+{	testSVG.rotate(down,right);
+}
+rotateSVG(-8,5);
+
+ var svgSun = document.getElementById("bigSun"); //Get svg element
+ //svg.addEventListener('mousedown',mouseIsDown);
+   svg.setAttributeNS(null,'onmousedown',"mouseIsDown(evt)");
+   svg.setAttributeNS(null,'onmouseup',"mouseIsUp(evt)");
+// svg.addEventListener('mouseUp',mouseIsUp);
+function mouseIsDown(e)
+{	
+  	takeCoordinates(e)
+	svg.setAttributeNS(null,'onmousemove',"mouseHasMoved(evt)");
+}
+function takeCoordinates(e)
+{
+	mouseX =   e.clientX||e.changedTouches[0].clientX;
+	mouseY =   e.clientY||e.changedTouches[0].clientY;
+}
+function mouseIsUp(e)
+{
+   svg.setAttributeNS(null,'onmousemove',null);
+}
+function mouseHasMoved(e)
+{
+	oldX= mouseX;
+	oldY= mouseY;
+	takeCoordinates(e)
+	document.getElementById("message").innerHTML =
+   	"  mouse to ( "+mouseX +" , "+mouseY+" ) from"+ "(" +oldX +" , "+oldY+" )"; 
+	rotateSVG(mouseX-oldX,mouseY-oldY);
+}
 
 /* m.b.t. de plaatjes, draaien etc:
 - op het svg-element moeten events geregistreerd worden:
@@ -426,7 +476,7 @@ document.getElementById("text_out").innerHTML = displayText;
 	after the rotation has been performed.
 	
 	Rotations are the product of small rotations along y-axis (phi) 
-	and z-axis (theta).
+	and x-axis (theta).
 	The resulting rotation matrix is stored, and when state=="rotate"
 	this matrix is updated every time when the mouse is moved.
 */

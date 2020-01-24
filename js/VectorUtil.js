@@ -14,7 +14,7 @@ let VectorUtil = function() {
     let Norm = function(V)
 	{
 		let sum= 0;
-		for (let j = 0, count = A.length; j < count; j++) 
+		for (let j = 0, count = V.length; j < count; j++) 
 		{   sum += Math.pow(A[j],2);
 		}
 		return Math.sqrt(sum);
@@ -29,12 +29,12 @@ let VectorUtil = function() {
 	}
     let Cos = function (A,B)
 	{
-		return innerProduct(A,B)/(Norm(A)*Norm(B);
+		return innerProduct(A,B)/(Norm(A)*Norm(B));
 	}
     let Phi = function(A,B)
 	{ 	return Math.acos(Cos(A,B));
 	}
-    let Sum = function(A, B) {
+    let Add = function(A, B) {
         let C = [];
         
         for (let j = 0, count = A.length; j < count; j++) 
@@ -83,7 +83,7 @@ let VectorUtil = function() {
 
     let AsString = function(A, precision)
 	{
-		precision = 2;//null==precision?0:precision;
+		precision = 5;//null==precision?0:precision;
 		var factor = Math.pow(10,precision);
 
 		var result = "[ ";
@@ -91,7 +91,7 @@ let VectorUtil = function() {
 		{
 			result +=  A[0].toFixed(precision) 
 
-			for (let j=1; j<A[i].length ; j++ )
+			for (let j=1; j<A.length ; j++ )
 			{	result +=  ", " + A[j].toFixed(precision);
 			}
 		}
@@ -104,7 +104,7 @@ let VectorUtil = function() {
 	InnerProduct: InnerProduct,
 	Cos: Cos,
 	Phi: Phi,
-        Sum: Sum,
+        Add: Add,
         Subtract: Subtract,
         TimesScalar: TimesScalar,
         Round: Round,

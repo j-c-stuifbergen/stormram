@@ -58,7 +58,7 @@ let MatrixUtil = function() {
         return C;
     };
     
-    let Sum = function(A, B) {
+    let Add = function(A, B) {
         let C = [];
         let i, j;
         
@@ -278,6 +278,39 @@ let MatrixUtil = function() {
         
         return C;
     };
+	let AsHTML = function (M)
+	{	result = "[";
+		if (0<M.length)
+		{
+			result +=" [ "
+			if (0<M[0].length)
+			{
+				result += M[0][0];
+				for (j =1; j<M[0].length; j++)
+				{
+					result += ", "+M[0][j];
+				}
+			}
+			result += " ]"
+				
+			for (i =1; i<M.length; i++)
+			{	
+				result +=",<br> \n [ "
+				if (0<M[i].length)
+				{
+					result += M[i][0];
+					for (j =1; j<M[i].length; j++)
+					{
+						result += ", "+M[i][j];
+					}
+				}
+				result += " ]"
+			}
+		}
+		result += " ] <br> \n";
+		return result;
+	}
+				
     let AsString = function(A, precision)
 	{
 		var result = "";
@@ -298,13 +331,14 @@ let MatrixUtil = function() {
         Identity: Identity,
         Clone: Clone,
         Transpose: Transpose,
-        Sum: Sum,
+        Add: Add,
         Subtract: Subtract,
         TimesScalar: TimesScalar,
         TimesVector: TimesVector,
 	TransposedVectorTimes:TransposedVectorTimes,
 	Multiply: Multiply,
         Round: Round,
+	AsHTML: AsHTML,
 	AsString: AsString,
 	Rows:Rows,
 	StackColumns:StackColumns,

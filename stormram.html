@@ -5,8 +5,8 @@
 <h2>JavaScript Arrays</h2>
 
 <p id="pict_out">
-<svg id="3Dscreen" width="400" height="400" viewbox="-200 -200 400 400" onmousedown='alert("No function is activated by clicking the mouse.")'>
-  <circle id="center" cx="-0" cy="00" r="4" stroke="#999" stroke-width="4" fill="green" />
+<svg id="3Dscreen" width="400" height="400" viewbox="-100 -100 200 200" onmousedown='alert("No function is activated by clicking the mouse.")'>
+  <circle id="center" cx="0" cy="0" r="4" stroke="#999" stroke-width="4" fill="green" />
 </svg>
 </p>
 <p id="message">Hier kan een foutmelding komen </p><hr>
@@ -77,12 +77,12 @@ function polar_vector(r,theta,phi)
 }
 /** @param {number} a - side of a triangle
 * @param {number} b - side of a triangle
-* @param {number} hypotenusa - third side of a triangle
+* @param {number} opposite - third side of a triangle
 * returns the cosine of the angle between sides a and b of a triangle
 */
-function cosine(hypotenusa,a,b)
+function cosine(opposite,a,b)
 {
-	return (-Math.pow(hypotenusa,2)+Math.pow(a,2)+Math.pow(b,2))/(2*a*b);
+	return (-Math.pow(opposite,2)+Math.pow(a,2)+Math.pow(b,2))/(2*a*b);
 }
 
 /* find a better estimate for BA, given estimates for vecA and vecD,
@@ -97,7 +97,7 @@ function estimate_BA(BD,vecB5,vecA,vecD)
 	        vecDB = vecB5.minus(vecD);
 		vecAD = vecD.minus(vecA);
 		
-		// if BD = vecDB.
+		// if BD == vecDB.norm(), the solution is stable
 		return 	(vecAB.ip(vecAD) + 
 			 vecAB.ip(vecDB) /vecDB.norm() * BD
 			)/vecAB.norm();
@@ -106,11 +106,15 @@ function estimate_BA(BD,vecB5,vecA,vecD)
 		*/
 }
 
-function find_vecA(B0,R,BA)
+function find_vecA(vecAx, B0,R,BA,alpha)
 {
 	var cosBA = cosine(BA,B0,R);
-	var theta = Math.acos(-cosBA);
-	return polar_vector(R,theta,Math.PI/2);
+	var angleAAxB = Math.acos(cosBA);
+	var correctedTheta = -angleAAxB-alpha;
+
+        displayText += ("A is "+polar_vector(R,theta-alpha,Math.PI/2).plus(vecAx).toString());
+	alert ("alpha is "+ alpha+"<BR> correctedTheta = "+correctedTheta+"<BR> vecAx = "+vecAx.toString()+"<BR> R = "+R+"<br>cosine is cosBA = "+cosBA+"<br>A is "+polar_vector(R,correctedTheta,Math.PI/2).plus(vecAx).toString());
+	return polar_vector(R,correctedTheta,Math.PI/2).plus(vecAx);
 }
 
 /* perform repeated small rotation around x and z axis
@@ -156,8 +160,6 @@ function Matrix_rotate(M_in,nPhi,nTheta)
                                  VectorUtil.InnerProduct(M[i],M[j])));
                }
         }
-
-
 	return M;
 }
 
@@ -175,7 +177,7 @@ function lineSegment(svgObject,from,to, color)
 
 	this.element = document.createElementNS(svgNameSpace, 'path'); //Create a path in SVG's namespace
 	this.element.style.stroke = color; //Set stroke colour
-	this.element.style.strokeWidth = "5px"; //Set stroke width
+	this.element.style.strokeWidth = "2px"; //Set stroke width
 	
    	this.setAtrb=function(attribute,value)
 	   {	this.element.setAttributeNS(null,attribute,value);
@@ -219,32 +221,37 @@ this.setCenter=function(xyz)
                 {       center = xyz;
                 }
         }
-        this.segments = []; // array of lineSegments
+        this.elements = []; // array of lineSegments
 
-	this.addSegment = function (from,to,color)
+	this.addCircle = function(center, color)
+        {};
+        
+        this.addSegment = function (from,to,color)
 	{
-		let count = this.segments.length;
-		this.segments[count] = new lineSegment(that,from,to,color);
-		svg.appendChild(this.segments[count].element);
-		this.segments[count].project(Mat_projection,center);
+		let count = this.elements.length;
+		this.elements[count] = new lineSegment(that,from,to,color);
+		svg.appendChild(this.elements[count].element);
+		this.elements[count].project(Mat_projection,center);
+                return this.elements[count]; // return a handle to the segment
 	}
 	this.rotate = function(down,right)
 	{
-
 		Mat_orient = Matrix_rotate(Mat_orient, down,right);
                 Mat_projection = MatrixUtil.Multiply(Mat_projection_init,Mat_orient);
-   		for( let i = 0; i<this.segments.length; i++)
-   		{
-		this.segments[i].project(Mat_projection,center);
-   		}
-	
+   		this.project();
 	}
+
+	this.project = function()
+	{
+   		for( let i = 0; i<this.elements.length; i++)
+   		{
+		this.elements[i].project(Mat_projection,center);
+   		}
+	}
+
 }
 
 testSVG = new svgObjects();
-	testSVG.addSegment([20,40,0],[80,40,0],"#F00");
-	testSVG.addSegment([20,40,0],[20,100,0],"#080");
-	testSVG.addSegment([20,40,0],[20,40,60],"#008");
 testSVG.setCenter([15,40,0]); 
 testSVG.rotate(-8,5);
 var mouseX, mouseY;
@@ -278,22 +285,25 @@ function mouseHasMoved(e)
 }
 
 /** param {number} nIterations - an integer
-* param {number} B0 - 
-* param {number} R
-* param {number} BA
+* param {number} B0 - distance from B5 to the axis B1-B2 (roughly under A)
+* param {number} R - initial guess for AD
+* param {number} BA - initial guess for BA
 * param {vector} vecAD - for the moment, a constant value
 * find the correct coordinates for A, based on B0 and R and BD.
 */
 
-function solveB5(nIterations, B0,R,BD,vecAD)
+function solveB5(nIterations, R,BD,vecBasis,vecAxis, vecAD,BAguess)
 {
 	var infoText = "";
-	var BA = BD; // intial estimate for BA
-	var vecB5=new vector ([0,0,-B0]);
+        var B0 = vecBasis.norm();
+        var alpha = vecBasis.phi(new vector([0,0,1]));
+        // alert ("alpha is "+alpha+"<BR> vectorbasis = "+vecBasis.toString());
+	var BA = BAguess; // intial estimate for BA, e.g. BA =BD
+	var vecB5=b5;//
 	for (var i = 0; i<nIterations ; i++)
 	{
 		infoText += "iteration = "+ i+"<br>";
-		var vecA = find_vecA(B0,R,BA);	
+		var vecA = find_vecA(vecAxis, B0,R,BA,alpha);	
 		var vecD = vecA.plus(vecAD); // this will be more complicated function later
 		// set new BA for better approximation
 		BA = estimate_BA(BD,vecB5,vecA,vecD);
@@ -309,71 +319,143 @@ function solveB5(nIterations, B0,R,BD,vecAD)
 }
 
 /** sketch:
-   A   D
+   A   D             C
+       B
 
-     O                  B
-* the vector from A to D is fixed (horizontal, of fixed length)).
-* O and B are fixed points.
-* known distances:
-* BD is known
-* OA is known
-* The distance AB is be calculated by an iterative process
+     B3              B1    B5
+ 
+* the distance from A to D is fixed).
+* B1 till B5 are fixed points.
+* D is between A and C
+* B is always under D
+* known fixed distances: AD, AC, DB (and thus AC, AB)
+* known distances (chosen settings):
+* B-B5, B3-A, B4-A, B1-C, B2-C, B5-B, 
+* The distance AB5 is calculated by an iterative process
+* and adjusted till it is in agreement with the 5 set distances
 */
 
 
+/* coordinates
+*/
+var L1 = 97.48*0.5;
+var L2 = 45;
+var AD = 10; 
+var DB = 00;
+var AC = 45; // distance between A and C
+
+// fixed coordinates:
+var b1 = new vector([-L1, 0,0]);
+var b2 = new vector([L1, 0,0]);
+var b3 = new vector([-L1, 0,L2]);
+var b4 = new vector([L1, 0,L2]);
+// var b5 = new vector([0,-9.08, -22.5]);
+var b5 = new vector([0,-9.08, -22.5]);
+//  var b5 = new vector([0,0, -20]);
+
+// fixed vector The assumption is that B is always under D 
+var vectorDB = new vector ([0,-DB,0]);// (the y-axis is vertical)
+
+// vectors to be calculated:
+var vectorA = new vector([0,L1,1.2*L2]); // estimate
+var vectorAC = new vector([0,0,-AC]); // estimate
+var vectorC = vectorA.plus(vectorAC); 
+var vectorAD = new vector([0,0,-AD]); // estimate, will be between A and C
+var vectorD = vectorA.plus(vectorAD); // D in fig. 7.3 of the thesis by Vincent Groenhuis = B' in fig. 6.4
+var vectorB = vectorD.plus(vectorDB);
+var vectorAxis = b3.plus(b4).times(0.5); 
+// setting for distance between B5 and B
+vectorBasis = b5.minus(vectorAxis); // setting for distance between B5 and B
+
+temp = [0,0,0];
+
+createStormram = function(svgObject, b1,b2,b3,b4,b5, vectorA,vectorC,vectorD,vectorB)
+{
+        pistonColor = "#00A";
+        b1C_segment = svgObject.addSegment(b1.vector,vectorC.vector,pistonColor);
+        b2C_segment = svgObject.addSegment(b2.vector,vectorC.vector,pistonColor);
+        b3A_segment = svgObject.addSegment(b3.vector,vectorA.vector,pistonColor);
+        b4A_segment = svgObject.addSegment(b4.vector,vectorA.vector,pistonColor);
+        b5B_segment = svgObject.addSegment(b5.vector,vectorB.vector,pistonColor);
+
+        connectionColor = "#2FF"
+        AC_segment = svgObject.addSegment(vectorA.vector,vectorC.vector,connectionColor);
+        DB_segment = svgObject.addSegment(vectorD.vector,vectorB.vector,"#800");
+
+        this.updateStormram = function( b1,b2,b3,b4,b5, vectorA,vectorC,vectorD,vectorB)
+        {
+        b1C_segment.from = b1.vector;
+        b2C_segment.from = b2.vector;
+        b3A_segment.from = b3.vector;
+        b4A_segment.from = b4.vector;
+        b5B_segment.from = b5.vector;
+        AC_segment.from = vectorA.vector;
+        DB_segment.from = vectorD.vector;
+
+        b1C_segment.to = vectorC.vector;
+        b2C_segment.to = vectorC.vector;
+        b3A_segment.to = vectorA.vector;
+        b4A_segment.to = vectorA.vector;
+        b5B_segment.to = vectorB.vector;
+        AC_segment.to = vectorC.vector;
+        DB_segment.to = vectorB.vector;
+        }
+        svgObject.project();
+}
 
 
+createStormram(testSVG, b1,b2,b3,b4,b5, vectorA,vectorC,vectorD,vectorB)
+var cosWantedTheta =vectorA.minus(vectorAxis).cos(new vector([0,0,1])); 
+vectorR =vectorA.minus(vectorAxis); 
+var BD = b5.minus(vectorD).norm(); // to be calculated from the position of A
+var BA = vectorA.minus(b5).norm(); // solution
 var displayText = "";
-
-var vectorA = new vector([0,10,3]);
-var vectorD = new vector([0,10,0]);
-var vectorAD = vectorD.minus(vectorA);
-
-testSVG.addSegment([20,40,0],[80,50,40],"#00F");
-testSVG.addSegment(vectorA.vector,vectorD.vector);
-			       /// why is this invisible ????????????????
-
-var B0 = 15; // fixed position between B5 and the axis
-var vectorB5 = new vector ([0,0,-B0]);//  polar_vector(B0,Math.PI/2,Math.PI/2);
-var R = vectorA.norm();// // to be calculated from the triangle B1 B2
-var BD = vectorB5.minus(vectorD).norm(); // to be calculated from the position of A
-var BA = vectorB5.minus(vectorA).norm(); // solution
 displayText += "coordinates: <br>";
+displayText += "vectorBasis is: "+vectorBasis.toString()+" <br>";
+displayText += "vectorAxis is: "+vectorAxis.toString()+" <br>";
 displayText += "A is: "+vectorA.toString()+" <br>";
-displayText += "B5: "+vectorB5.toString()+" <br>";
+displayText += "R is: "+vectorR.norm()+" <br>";
+displayText += "B5: "+b5.toString()+" <br>";
 displayText += "D: "+vectorD.toString()+" <br>";
 displayText += "solution for BA = "+ BA +"<br>";
 displayText += "solution for BD = "+ BD +"<br>";
+displayText += "cosWantedTheta = "+ cosWantedTheta +"<br>";
+displayText += "cos b5-Axis-A = "+ (vectorBasis.cos(vectorR)) +"<br>";
+var cosBA = cosine(BA,vectorBasis.norm(),vectorR.norm());
+displayText += " cosBA ="+cosBA;
+alpha = vectorBasis.phi(new vector([0,0,1]));
+var theta = Math.acos(cosBA)
+var checkA = new vector([ 0, vectorR.norm()*Math.sin(-theta-alpha), vectorR.norm()*Math.cos(-theta-alpha)]).plus(vectorAxis)
+var checkA2 = polar_vector(vectorR.norm(),-theta-alpha,Math.PI/2).plus(vectorAxis);
+displayText += "<br>alpha = "+ alpha +"<br>";
+displayText += "cos(alpha) = "+ Math.cos(alpha) +"<br>";
+displayText += "vectorA wordt: "+find_vecA(vectorAxis, vectorBasis.norm(),vectorR.norm(),BA,alpha).toString()+"<br>";
+displayText += "checkA wordt: "+checkA.toString()+"<br>";
+displayText += "checkA2 wordt: "+checkA2.toString()+"<br>";
 
 BA = BD;// -vecAD.norm(); // to be calculated from the position of A
 displayText += "We will start the iteration with BA = "+ BA +"<hr>";
 
-displayText += solveB5(20, B0,R,BD,vectorAD).text;
+displayText += solveB5(20,vectorR.norm(),BD,vectorBasis,vectorAxis,vectorAD,BA).text;
 
 document.getElementById("text_out").innerHTML = displayText;
 
 /* m.b.t. de plaatjes, draaien etc:
 - op het svg-element moeten events geregistreerd worden:
-	- in status "normal": onMouseDown: set state="rotate"
-	- in status "rotate: onMouseMove: change pictures
-		onMouseUp: set state="normal"
-		onMouseOut: set state="normal"
-- rotation:
-	the "d" attribute of each path element must be updated.
-	The program must have an array that contains for each path:
-	- the id attribute (e.g. id = "vecA", "axis_x")
-	- the start coordinates
-	- the end coordinates
-	so the "d" attribute can be calculated.
+- in status "normal": onMouseDown: set state="rotate"
+- in status "rotate: onMouseMove: change pictures
+	onMouseUp: set state="normal"
+	onMouseOut: set state="normal"
 
-	The projection from 3D to 2D is a parallel projection.
-	So essentially, just the x and y coordinates,
-	after the rotation has been performed.
-	
-	Rotations are the product of small rotations along y-axis (phi) 
-	and x-axis (theta).
-	The resulting rotation matrix is stored, and when state=="rotate"
-	this matrix is updated every time when the mouse is moved.
+- rotation:
+The projection from 3D to 2D is a parallel projection.
+So essentially, just the x and y coordinates,
+after the rotation has been performed.
+
+Rotations are the product of small rotations along y-axis (phi) 
+and x-axis (theta).
+The resulting rotation matrix is stored, and when state=="rotate"
+this matrix is updated every time when the mouse is moved.
 */
 </script>
 

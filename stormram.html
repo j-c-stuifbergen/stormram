@@ -27,21 +27,21 @@ function vector(coordinates)
 	};
 
 	this.plus = function(vec_b)
-	{	result = Array(this.vector.length);
+	{	let result = Array(this.vector.length);
 		for (let i = 0; i<this.vector.length; i++)
 		{ 	result[i]= this.vector[i] +vec_b.vector[i];
 		}
 		return new vector(result);
 	}
 	this.minus = function(vec_b)
-	{	result = Array(this.vector.length);
+	{	let result = Array(this.vector.length);
 		for (let i = 0; i<this.vector.length; i++)
 		{ 	result[i]= this.vector[i] -vec_b.vector[i];
 		}
 		return new vector(result);
 	}
 	this.times = function(scalar)
-	{	result = Array(this.vector.length);
+	{	let result = Array(this.vector.length);
 		for (let i = 0; i<this.vector.length; i++)
 		{ 	result[i]= this.vector[i] * scalar;
 		}
@@ -55,9 +55,24 @@ function vector(coordinates)
 		return sum;
 	};
 
-
+	// outer product
+	this.op= function(vec_b)
+	{	let coords = [];
+		coords[0] = this.vector[1]*vec_b.vector[2]-this.vector[2]*vec_b.vector[1];
+		coords[1] = this.vector[2]*vec_b.vector[0]-this.vector[0]*vec_b.vector[2];
+		coords[2] = this.vector[0]*vec_b.vector[1]-this.vector[1]*vec_b.vector[0];
+		return new vector(coords);
+	}
+	this.along= function (vec_b)
+	{	return this.ip(vec_b)/vec_b.norm();
+	}
+	this.projectOn= function(vec_b)
+	{  	let ip = this.ip(vec_b);
+		let norm2 = vec_b.ip(vec_b);
+		return vec_b.times(ip/norm2);
+	}
 	this.cos= function(vec_b)
-	{	ip = this.ip(vec_b);
+	{	let ip = this.ip(vec_b);
 		return ip / (this.norm()*vec_b.norm());
 	}
 	this.phi= function(vec_b)
@@ -113,8 +128,33 @@ function find_vecA(vecAx, B0,R,BA,alpha)
 	var correctedTheta = -angleAAxB-alpha;
 
         displayText += ("A is "+polar_vector(R,theta-alpha,Math.PI/2).plus(vecAx).toString());
-	alert ("alpha is "+ alpha+"<BR> correctedTheta = "+correctedTheta+"<BR> vecAx = "+vecAx.toString()+"<BR> R = "+R+"<br>cosine is cosBA = "+cosBA+"<br>A is "+polar_vector(R,correctedTheta,Math.PI/2).plus(vecAx).toString());
+	//alert ("alpha is "+ alpha+"<BR> correctedTheta = "+correctedTheta+"<BR> vecAx = "+vecAx.toString()+"<BR> R = "+R+"<br>cosine is cosBA = "+cosBA+"<br>A is "+polar_vector(R,correctedTheta,Math.PI/2).plus(vecAx).toString());
 	return polar_vector(R,correctedTheta,Math.PI/2).plus(vecAx);
+}
+
+/* return a vector vecR such that:
+* - vecR.norm() == R
+* - || vecR - vecBasis || == BA
+* - the outer product: vecR x vecBasis is parallel to vecAxis
+*   so (vecR x vecBasis) x vecAxis = 0 
+* - the result is a kind of right-handed system of vectors,
+*   so (vecR x vecBasis) . vecAxis >= 0 
+*/
+function find_vecA_new(vecAx, vecBasis,R,BA)
+{
+	var B0 = vecBasis.norm();
+	var unitBasis = vecBasis.times(1/B0);
+	var unitAx = vecAx.times(1/vecAx.norm());
+	var vecZ = vecBasis.op(unitAx);
+	var unitZ = vecZ.times(1/vecZ.norm());
+
+	var cosBA = cosine(BA,B0,R);
+	var sinBA = Math.sqrt(1-cosBA*cosBA);
+
+	result =  unitBasis.times(cosBA*R).plus(unitZ.times(sinBA*R));
+	
+	alert ("<br>cosine is cosBA = "+cosBA+"<br>unitAx is "+unitAx.toString()+"<br>unitBAsis is "+unitBasis.toString()+"<br>unitZ is "+unitZ.toString()+"<br>Result is "+result.toString()+"<br>A is "+result.plus(vecAx).toString());
+	return result;
 }
 
 /* perform repeated small rotation around x and z axis
@@ -318,6 +358,17 @@ function solveB5(nIterations, R,BD,vecBasis,vecAxis, vecAD,BAguess)
 		};
 }
 
+function axisPoint(axVector, oppositeL, adjacentL)
+{
+	cosPhi = cosine(oppositeL, adjacentL,axVector.norm());
+	B = cosPhi*adjacentL;
+	R = adjacentL*(Math.sqrt(1-cosPhi*cosPhi));
+
+	Center = axVector.times(B/axVector.norm());
+
+	return { R: R, centerVec: Center}
+}
+
 /** sketch:
    A   D             C
        B
@@ -341,7 +392,7 @@ function solveB5(nIterations, R,BD,vecBasis,vecAxis, vecAD,BAguess)
 var L1 = 97.48*0.5;
 var L2 = 45;
 var AD = 10; 
-var DB = 00;
+var DB = 20;
 var AC = 45; // distance between A and C
 
 // fixed coordinates:
@@ -382,7 +433,7 @@ createStormram = function(svgObject, b1,b2,b3,b4,b5, vectorA,vectorC,vectorD,vec
         AC_segment = svgObject.addSegment(vectorA.vector,vectorC.vector,connectionColor);
         DB_segment = svgObject.addSegment(vectorD.vector,vectorB.vector,"#800");
 
-        this.updateStormram = function( b1,b2,b3,b4,b5, vectorA,vectorC,vectorD,vectorB)
+        this.update = function( b1,b2,b3,b4,b5, vectorA,vectorC,vectorD,vectorB)
         {
         b1C_segment.from = b1.vector;
         b2C_segment.from = b2.vector;
@@ -404,7 +455,7 @@ createStormram = function(svgObject, b1,b2,b3,b4,b5, vectorA,vectorC,vectorD,vec
 }
 
 
-createStormram(testSVG, b1,b2,b3,b4,b5, vectorA,vectorC,vectorD,vectorB)
+var stormram = new createStormram(testSVG, b1,b2,b3,b4,b5, vectorA,vectorC,vectorD,vectorB)
 var cosWantedTheta =vectorA.minus(vectorAxis).cos(new vector([0,0,1])); 
 vectorR =vectorA.minus(vectorAxis); 
 var BD = b5.minus(vectorD).norm(); // to be calculated from the position of A
@@ -429,14 +480,19 @@ var checkA = new vector([ 0, vectorR.norm()*Math.sin(-theta-alpha), vectorR.norm
 var checkA2 = polar_vector(vectorR.norm(),-theta-alpha,Math.PI/2).plus(vectorAxis);
 displayText += "<br>alpha = "+ alpha +"<br>";
 displayText += "cos(alpha) = "+ Math.cos(alpha) +"<br>";
-displayText += "vectorA wordt: "+find_vecA(vectorAxis, vectorBasis.norm(),vectorR.norm(),BA,alpha).toString()+"<br>";
+// displayText += "vectorA wordt: "+find_vecA(vectorAxis, vectorBasis.norm(),vectorR.norm(),BA,alpha).toString()+"<br>";
+var almostA =  (find_vecA_new(vectorAxis.minus(b3).times(-1), vectorBasis,vectorR.norm(),BA))
+displayText += "vectorA new wordt: "+almostA.toString()+"<br>";
+displayText += "vectorA new verplaatst wordt: "+almostA.plus(vectorAxis).toString()+"<br>";
 displayText += "checkA wordt: "+checkA.toString()+"<br>";
 displayText += "checkA2 wordt: "+checkA2.toString()+"<br>";
 
 BA = BD;// -vecAD.norm(); // to be calculated from the position of A
 displayText += "We will start the iteration with BA = "+ BA +"<hr>";
 
-displayText += solveB5(20,vectorR.norm(),BD,vectorBasis,vectorAxis,vectorAD,BA).text;
+var solution = solveB5(2,vectorR.norm(),BD,vectorBasis,vectorAxis,vectorAD,BA);
+displayText += solution.text;
+var stormram = stormram.update(b1,b2,b3,b4,b5, solution.vecA,vectorC,solution.vecD,vectorB)
 
 document.getElementById("text_out").innerHTML = displayText;
 

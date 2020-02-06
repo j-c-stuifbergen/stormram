@@ -83,7 +83,7 @@ let VectorUtil = function() {
 
     let AsString = function(A, precision)
 	{
-		precision = 5;//null==precision?0:precision;
+		precision = (null==precision)?5:precision;
 		var factor = Math.pow(10,precision);
 
 		var result = "[ ";

@@ -1,0 +1,27 @@
+=======================
+versions stormram.html
+=======================
+
+stormram_08.html
+===================
+- labels added
+- the initial orientation has changed
+- createStormram.update will call svgObject.project()
+- C is calculated by the distances from A, B1 and B2
+- B is calculated (interpolated between A and C)
+- a check is performed: does the result satisfy the given distances
+(R1,..,R5, AC,AB,BC,BD)
+- added XYZ axis symbol
+
+stormram_09.html
+===================
+- function footOnAxis replaces axisPoint
+- function find_vec replaces find_vecA, same function used for A and C
+- error handling added if A or C can't be calulated
+
+=============================
+left to do:
+=============================
+- XYZ should rotate around its origin, not around the stormram
+- svgAxis and svgTest are in the same frame, but can rotate independently. So there is a risk that the axis frame's orientation will be wrong.
+

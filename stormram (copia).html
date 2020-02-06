@@ -189,14 +189,14 @@ function polar_vector(r,theta,phi)
 */
 function cosine(opposite,a,b)
 {
-	result = (-Math.pow(opposite,2)+Math.pow(a,2)+Math.pow(b,2))/(2*a*b)
-	if ( result < -1 ) // a+b < opposite
+	if ( a+b < opposite) // result < -1
 	{	let tooBig = true;
-		throw new CosineError("Can't create a triangle with sides of lengths "+opposite+" , "+a+" , "+b,tooBig)
+		throw new (CosineError("Can't create a triangle with sides of lengths "+opposite+" , "+a+" , "+b,tooBig))
 	}
+	result = (-Math.pow(opposite,2)+Math.pow(a,2)+Math.pow(b,2))/(2*a*b)
 	if ( 1 < result)
 	{	let tooBig = false;
-		throw new CosineError("Can't create a triangle with sides of lengths "+opposite+" , "+a+" , "+b,tooBig)
+		throw new (CosineError("Can't create a triangle with sides of lengths "+opposite+" , "+a+" , "+b,tooBig))
 	}
 
 	return result;
@@ -232,37 +232,26 @@ function estimate_BA(B5D,vecB5,vecA,vecD)
 * - the result is a kind of right-handed system of vectors,
 *   so (vecR x vecBasis) . vecAxis >= 0 
 */
-function find_vec(vecAx, vecBasis,H, D, D_alongAxis, labelBasis, labelAdjacent, labelH)
-{	
-	D2 = 	D*D - Math.pow(D_alongAxis,2)
-	if ( D2 <0 )
-	{	message ="component "+labelAdjacent+" is too short to create a triangle "+labelAdjacent+" - "+labelBasis+" - "+labelH
-		alert(message)
-		throw new Error(message)
-	}
-	D_ortho = Math.sqrt(D2);
-	
-	var BNorm = vecBasis.norm();
-	var unitBasis = vecBasis.times(1/BNorm);
+function find_vec(vecAx, vecBasis,H, R, R_projected)
+
+{
+	R_ortho = Math.sqrt(R*R - Math.pow(R_projected,2));
+
+	var B0 = vecBasis.norm();
+	var unitBasis = vecBasis.times(1/B0);
 	// var unitAx = vecAx.times(1/vecAx.norm());
 	var unitOrtho = vecBasis.op(vecAx).unit(); // unit vector orthogonal to vecBasis and vecAx
 	// var unitOrtho = vecOrtho.times(1/vecOrtho.norm());
 
-	try
-	{	var cosAxis = cosine(D_ortho,BNorm,H);
-	}
-	catch (exception)
-	{
-	  	handleCosineError(exception,labelBasis, "component of "+labelAdjacent, labelH, D_ortho, BNorm, H)
-	}
+	var cosAxis = cosine(R_ortho,B0,H);
 	var sinAxis = Math.sqrt(1-cosAxis*cosAxis);
 
 	var result =  unitBasis.times(cosAxis*H).plus(unitOrtho.times(sinAxis*H));
 	
- 	//	alert ("<br>0<B0+R-BA = ??"+"<br>cosine is cosBA = "+cosAxis+"<br>BNorm = "+BNorm+"<br>D = "+D+"<br>D = "+D+"<br>D_ortho is "+D_ortho+D+"<br>H is "+H+"<br>unitBAsis is "+unitBasis.toString()+"<br>unitOrtho is "+unitOrtho.toString()+"<br>Result is "+result.toString()); // +"<br>A is "+result.plus(vecAx).toString());
+ 	// alert ("<br>0<B0+R-BA = "+(B0+R-BA)+"<br>cosine is cosBA = "+cosBA+"<br>B0 = "+B0+"<br>BA = "+BA+"<br>R = "+R+"<br>unitAx is "+unitAx.toString()+"<br>unitBAsis is "+unitBasis.toString()+"<br>unitOrtho is "+unitOrtho.toString()+"<br>Result is "+result.toString()); // +"<br>A is "+result.plus(vecAx).toString());
 	return result;
 }
-function find_vecA_old(vecAx, vecBasis,R,BA)
+function find_vecA_new(vecAx, vecBasis,R,BA)
 {
 	var B0 = vecBasis.norm();
 	var unitBasis = vecBasis.times(1/B0);
@@ -561,20 +550,20 @@ function solveB5(params)
 	var vectorAxis = b4.minus(b3); // b4.minus(b3) gives the wrong orientation
 
 	// var triangleInfo_A = axisPoint(vectorAxis, R3,R4);// Axis points from b3 to b4
-	var triangleInfo_A = footOnAxis(b3,b4, R3,R4, "B5-D", "R3","R4");// the foot of A on the axis
-	var foot_A = triangleInfo_A.landingVec.plus(b3);
-	var B5_projected = b5.minus(foot_A).projectOn(vectorAxis)
-	let basisVec = b5.minus(foot_A).minus(B5_projected) // b5+(vecC-b5)pO(axis)-veC
+	var triangleInfo_A = axisPoint_new(b3,b4, R3,R4, "A", "R3","R4");// the foot of A on the axis
+	var vecLanding_A = triangleInfo_A.landingVec.plus(b3);
+	var B5_projected = b5.minus(vecLanding_A).projectOn(vectorAxis)
+	let basisVec = b5.minus(vecLanding_A).minus(B5_projected) // b5+(vecC-b5)pO(axis)-veC
 	
-	var vectorAxis_C = b1.minus(b2); // b2.minus(b3) gives the wrong orientation in find_vec
+	var vectorAxis_C = b2.minus(b1); // b1.minus(b2) gives the wrong orientation
 	//	var triangleInfo_C = axisPoint(vectorAxis_C, R1,R2);// Axis points from b1 to b2
-	var triangleInfo_C = footOnAxis(b1,b2, R1,R2,"A-C","R1","R2");// Axis points from b1 to b2
-	var foot_C = triangleInfo_C.landingVec.plus(b1);
+	var triangleInfo_C = axisPoint_new(b1,b2, R1,R2,"C","R1","R2");// Axis points from b1 to b2
+	var vecLanding_C = triangleInfo_C.landingVec.plus(b1);
 	var hC = triangleInfo_C.H;
 
-	// By definition of b1 and b2, foot_C has y=0 and z=0
+	// By definition of b1 and b2, vecLanding_C has y=0 and z=0
 	
-	infoText += "H : "+triangleInfo_A.H+"<br>";	
+	/* infoText += "H : "+triangleInfo_A.H+"<br>";	
 	infoText += "||A|| according to triangle: "+Math.sqrt(Math.pow(triangleInfo_A.H,2)+Math.pow(triangleInfo_A.landingVec.norm(),2))+"<br>";
 		infoText += "vectorAxis is : "+ vectorAxis.toString()+"<br>";
 		infoText += "b5 is : "+ b5.toString()+"<br>";
@@ -582,54 +571,33 @@ function solveB5(params)
 		infoText += "basisVec is : "+ basisVec.toString()+"<br>";
 		infoText += "B5 axial is : "+ B5_projected.norm()+"<br>";
 		infoText += " Basis_vec must be ortho to axis: ip = "+basisVec.ip(vectorAxis)+"<br>";
-		infoText += "foot_A is : "+ foot_A.toString()+"<br>";
-		infoText += "foot_A-b5 is : "+ foot_A.minus(b5).toString()+"<br>";
+		infoText += "vecLanding_A is : "+ vecLanding_A.toString()+"<br>";
+		infoText += "vecLanding_A-b5 is : "+ vecLanding_A.minus(b5).toString()+"<br>";
 	infoText += "vectorAxis_C is : "+ vectorAxis_C.toString()+"<br>";
 	infoText += "R1 is : "+ R1+"<br>";
 	infoText += "R2 is : "+ R2+"<br>";
-	infoText += "foot_C is : "+ foot_C.toString()+"<br>";
-	infoText += "hC is : "+ hC+"<br>";
-	/**/
+	*/
 
 	for (var i = 0; i<nIterations ; i++)
 	{
 		infoText += "<hr>iteration = "+ i+"<br>";
+			// estimate A
 		infoText += "B5toA: "+B5toA+" <br>";
 
-		// estimate A
-		vecA = find_vec(vectorAxis,basisVec,triangleInfo_A.H,B5toA,B5_projected.norm(), "A","B to A","H of A").plus(foot_A);	
+		vecA = find_vec(vectorAxis,basisVec,triangleInfo_A.H,B5toA,B5_projected.norm()).plus(vecLanding_A);	
 
 		// calculate C
-		let A_projected = vecA.minus(foot_C).projectOn(vectorAxis_C)
-		let basisVec_A = vecA.minus(foot_C).minus(A_projected) // from A to the axis of C
 
-		infoText += "<b>input for vecC</b> ";
-		infoText += "<br> vectorAxis_C = "+vectorAxis_C
-		infoText += "<br> basisVec_A = "+basisVec_A
-		infoText += "<br> hC = "+triangleInfo_C.H
-		infoText += "<br> AC = "+AC
-		infoText += "<br> A along axisC = "+A_projected.norm() 
-		infoText += "<br> foot_C = "+foot_C+"<br>"
 
-		var vecC = find_vec(vectorAxis_C,basisVec_A,triangleInfo_C.H,AC,A_projected.norm(), "C", "AC", " hC ").plus(foot_C);	
-		// calculate B, between A and C
-		var vecB = vecA.times(1-AB/AC).plus(vecC.times(AB/AC));
-		// estimate D		
-		var vecD = vecB.plus(vecBD); // not correct - this will be a more complicated function, setting the J14 axis parallel to J13
-
-		// set a better value for BA for the nex approximation
-		B5toA = estimate_BA(B5D,b5,vecA,vecD);
-
-		// alternative calculation of C, to test find_vec
 		// C is at the intersection of the sphere around A of radius AC
 		// with the circle orthogonal to the axis (b1-->b2) with radius hC
-		// and center foot_C
+		// and center vecLanding_C
 		// So
 		// (x-xA)^2 + (y-yA)^2 +(z-zA) = R^2
 		// and, because b1 and b2 are on the x axis,
-		// x is given by and foot_C and 
+		// x is given by and vecLanding_C and 
 		// y^2 + z^2 = H^2
-		dX = foot_C.vector[0] - vecA.vector[0];
+		dX = vecLanding_C.vector[0] - vecA.vector[0];
 		yA = vecA.vector[1]; zA =vecA.vector[2]
 		K = 0.5 * (hC*hC + dX*dX + yA*yA + zA*zA - AC*AC);
 		yC = quadraticRoot(K*K-zA*zA*hC*hC, -2*K*yA, yA*yA+zA*zA)[1] // take the highest y-value
@@ -637,17 +605,29 @@ function solveB5(params)
 		// !!! z = Math.sqrt(hC*hC -yC*yC)]) // wrong because this will not yield a negative value for z.
 		// z= zA-sqrt(R^2-(yC-yA)^2-dX^2)
 		var z = zA-Math.sqrt(AC*AC - (yC-yA)*(yC-yA) - dX*dX); // for the solution with z < zA
-		// var vecC = new vector([foot_C.vector[0], yC, Math.sqrt(hC*hC -yC*yC)])
-		var vecC_alternative = new vector([foot_C.vector[0], yC, z])
+		// var vecC = new vector([vecLanding_C.vector[0], yC, Math.sqrt(hC*hC -yC*yC)])
+		var vecC = new vector([vecLanding_C.vector[0], yC, z])
 
+
+		var A_projected = vecA.minus(vecLanding_C).projectOn(vectorAxis_C)
+		let basisVec_C = vecA.minus(vecLanding_C).minus(A_projected) // b5+(vecC-b5)pO(axis)-veC
+
+		var vecC_alternative = find_vec(vectorAxis_C.times(-1),basisVec_C,triangleInfo_C.H,AC,A_projected.norm()).plus(vecLanding_C);	
 
 		var vecC_check = vecC_alternative.minus(vecC)		
 		// infoText += "Controle : sqrt(R^2 -y^2 - z^2) ="+ Math.sqrt(AC*AC- (yC-yA)*(yC-yA) - Math.pow(z-zA,2))+"<br>";
+		// calculate B, between A and C
+		var vecB = vecA.times(1-AB/AC).plus(vecC.times(AB/AC));
+		// estimate D		
+		var vecD = vecB.plus(vecBD); // not correct - this will be a more complicated function, setting the J14 axis parallel to J13
+
+		// set new BA for better approximation
+		B5toA = estimate_BA(B5D,b5,vecA,vecD);
 
 		infoText += "A : "+ vecA.toString()+"<br>";
 		infoText += "C : "+ vecC.toString()+"<br>";
 		infoText += "C alt : "+ vecC_alternative.toString()+"<br>";
-		infoText += "C check : "+ vecC_check.toString()+"<br>";
+		infoText += "C : "+ vecC_check.toString()+"<br>";
 		infoText += "B : "+ vecB.toString()+"<br>";
 		infoText += "D: "+vecD.toString()+" <br>";
 
@@ -707,11 +687,11 @@ function axisPoint(axVector, adjacentL, oppositeL)
    param {vector} axEnd
    param {Number} adjacentL
    param {Number} oppositeL
-   param {String} labelToSummit
+   param {String} labelSummit
    param {String} labelAdj
    param {String} labelOpp
 */    
-function footOnAxis(axStart, axEnd, adjacentL, oppositeL, labelToSummit, labelAdj, labelOpp)
+function axisPoint_new(axStart, axEnd, adjacentL, oppositeL, labelSummit, labelAdj, labelOpp)
 {
 	var axVector = axEnd.minus(axStart);
 
@@ -721,21 +701,20 @@ function footOnAxis(axStart, axEnd, adjacentL, oppositeL, labelToSummit, labelAd
 	}
 	catch (exception)
 	{
-	  	handleCosineError(exception,"Axis for "+labelToSummit, labelAdj, labelOpp, axVector.norm(),adjacentL,oppositeL)
-	/* if (exception instanceof CosineError)
+	  	if (exception instanceof CosineError)
 		{
-			if (exception.tooBig)
-			{	message = "Can't construct triangle "+labelToSummit+"-"+labelAdj+"-"+labelOpp+", because "+labelOpp+" is too big compared to "+labelAdj+" ("+oppositeL+" vs "+adjacentL+"). ";
+			if (CosineError.tooBig)
+			{	message = "Can't construct triangle "+labelSummit+"-"+labelAdj+"-"+labelOpp+", "+labelOpp+" is too big compared to "+labelAdj+" ("+oppositeL+" vs "+adjacentL+"). ";
 			}
 			else
-			{	message = "Can't construct triangle "+labelToSummit+"-"+labelAdj+"-"+labelOpp+", try a bigger value for "+labelOpp+" (currently "+oppositeL+" ). ";
+			{	message = "Can't construct triangle "+labelSummit+"-"+labelAdj+"-"+labelOpp+", try a bigger value for "+labelOpp+" (currently "+oppositeL+" ). ";
 			}
 			//	exception.addMessage(message); throw (exception);
 			throw (new Error (message + exception.message));
 		}
 		else 
 		{	throw (exception)
-		}*/
+		}
 	}	
 	B = cosPhi*adjacentL;
 	R = adjacentL*(Math.sqrt(1-cosPhi*cosPhi));
@@ -744,25 +723,6 @@ function footOnAxis(axStart, axEnd, adjacentL, oppositeL, labelToSummit, labelAd
 	return { axisVec: axVector,
 		 H: R,
 		 landingVec: Center};
-}
-
-function handleCosineError(exception,labelAdj1, labelAdj2, labelOpp, adjacent1L, adjacent2L, oppositeL)
-{
-  	if (exception instanceof CosineError)
-	{
-		if (exception.tooBig)
-		{	message = "Can't construct triangle "+labelAdj1+"-"+labelAdj2+"-"+labelOpp+", "+labelOpp+" is too big compared to "+labelAdj2+" ("+oppositeL+" vs "+adjacent2L+"). ";
-		}
-		else
-		{	message = "Can't construct triangle "+labelAdj1+"-"+labelAdj2+"-"+labelOpp+", try a bigger value for "+labelOpp+" (currently "+oppositeL+" ). ";
-		}
-		//	exception.addMessage(message); throw (exception);
-		alert(message+exception.message)
-		throw (new Error (message + exception.message));
-	}
-	else 
-	{	throw (exception)
-	}
 }
 
 /* solve c0 + c1 y +c2 y^2 = 0 
@@ -861,10 +821,10 @@ var stormram = new createStormram(resultSvg, b1,b2,b3,b4,b5)
 var displayText = "";
 
 var configuration = { nIterations: 20,
-		R1: 80,// vectorC.minus(b1).norm(), 
-		R2: 80,//vectorC.minus(b2).norm(),
+		R1: 70,// vectorC.minus(b1).norm(), 
+		R2: 70,//vectorC.minus(b2).norm(),
 		R3: 76,// vectorA.minus(b3).norm(),
-		R4: 66,// vectorA.minus(b4).norm(),
+		R4: 76,// vectorA.minus(b4).norm(),
 		B5D :85,//  B5D,
 		AB : AB,
 		AC : AC, // vectorA.minus(vectorC).norm()

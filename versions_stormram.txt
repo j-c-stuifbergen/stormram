@@ -13,11 +13,20 @@ stormram_08.html
 (R1,..,R5, AC,AB,BC,BD)
 - added XYZ axis symbol
 
+===================
 stormram_09.html
 ===================
 - function footOnAxis replaces axisPoint
 - function find_vec replaces find_vecA, same function used for A and C
 - error handling added if A or C can't be calulated
+
+===================
+stormram_10.html
+===================
+function Solve returns values of each iteration, not only the final result
+
+pictures are in folder /pics
+I have added drawings and a mathematical explanation.
 
 =============================
 left to do:

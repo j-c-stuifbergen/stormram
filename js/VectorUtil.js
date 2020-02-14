@@ -83,7 +83,7 @@ let VectorUtil = function() {
 
     let AsString = function(A, precision)
 	{
-		precision = (null==precision)?5:precision;
+		// precision = (null==precision)?5:precision;
 		var factor = Math.pow(10,precision);
 
 		var result = "[ ";
@@ -92,7 +92,7 @@ let VectorUtil = function() {
 			result +=  A[0].toFixed(precision) 
 
 			for (let j=1; j<A.length ; j++ )
-			{	result +=  ", " + A[j].toFixed(precision);
+			{	result +=  ", " + ((null==precision)?A[j]:A[j].toFixed(precision));
 			}
 		}
 		result +=" ]";

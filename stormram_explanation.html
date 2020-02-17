@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 
 <HEAD> 
-<TITLE>stormram calculation</TITLE></HEAD>
+<TITLE>stormram explanation and convergence</TITLE></HEAD>
 
 <link rel="stylesheet" type="text/css" href="./index.css" /> 
 
@@ -13,65 +13,125 @@
 <body>
 
 <h2>Stormram</h2>
-One of my friends (<a href="http://www.vincentgroenhuis.nl">Vincent Groenhuis</a>) has obtained a PhD for research on medical robots that can position a biopsy needle.
-<br>
+One of my friends has obtained a PhD for research on medical robots that could position a needle.<br>
 In one of the models, called "Stormram 1", the position of the needle (\(\vec E \)) depends on the positions of 5 pistons, stemming from points \(\vec B_1\) till \(\vec B_5\).<br>
-I took up the challenge to work this calculation out, and test its convergence. That could save the purchase of a Matlab licence!<br>
-<br>
-(click on the picture below to rotate it)<br>
+<img src="./pics/groenhuis fig 7.3.png" /><br>
+(The first 3 pictures on this web-site were taken from a PhD thesis by <a href="http://www.vincentgroenhuis.nl">Vincent Groenhuis</a>. I thank the author for his permission.The full text can be found in <em> <a href="https://research.utwente.nl/en/persons/vincent-groenhuis/publications/">Robotic systems for breast biopsy
+using MRI and ultrasound imaging</a> ISBN: 978-90-365-4892-2</em> ) 
+<p>
+In his thesis, he hints at a method to calculate the positions of \(A\) and C.<br>
+<img src="./pics/groenhuis fig 6.7.png" /><br>
+Also, Vincent Groenhuis states, among possible explanations for the deviation from experiment: misalignment of points \(\vec B\) and  \(\vec D\) .
+(paragraf 6.6, page 121). This happens when \(\vec D\) rotates around axis AC. Such a rotation should happen because torsion in the beam J5 (from \(B_5\) to D) should align axis J14 with axis J13 in the picture below. My model <em>calculates</em> exactly this misalignment.<br>
+<img src="./pics/groenhuis fig 7.7.png" /><br>
+I took up the challenge to work this calculation out, and test its convergence.<br>
+
+<hr>
+<h3>Principle of convergence</h3>
+If we know the distance \(B_5A\), we can calculate the position of \(\vec A\).<br>
+We know the distance \(AC\), so then we can calculate the position of \(\vec C\).<br>
+\(\vec B\) is between \(\vec A\) and \(\vec C\), and \(\vec D\) is at a fixed distance from \(\vec A\) and from \(\vec B\). \(\vec D\) may turn around the axis \(\vec A - \vec C\) such that \(\hat J_{14}\) is parallel to \(\hat J_{13}\). A change in \(\vec D\) has a small effect on the distance \(B_5A\).
+<p>
+
+The solution will be to make a guess for \(B_5A\), and then:<br>
+- calculate \(\vec A\)<br>
+- calculate \(\vec C\) (and \(\vec B\))<br>
+- <em>estimate</em> \(\vec D\)<br>
+- calculate the orientation of \(\hat J_{15}\)<br>
+- improve our estimate for  \(\vec D\) <br>
+- calculate the angles of the triangle \(\triangle ADB_5\)<br>
+- improve our estimate for \(B_5A\)<br>
+- repeat...<br>
+This sounds like an vicious circle.<p>
+
+Actually, it is not a circle but a spiral: after each round, I will be nearer to the solution (in mathematical terms: the calculation <em>converges</em> to the solution).<br>
+The reason is that:<br>
+- a change in \(B_5A\) causes a smaller change in the angles<br>
+- a change in the angles causes a smaller change in the distances \(B_5A\)<br>
+So in each round, the solution will change a bit, but it will change less at each round.<br>
+After a few repetitions, the results don't change significantly, so we may then consider the calculation finished.
+<p>
+ 
+<hr>
+<h3> Calculation steps </h3>
+<em>improving my estimate for \(B_5A\)</em><p>
+<img src="./pics/pict3_improve_B5A.jpeg" height=200 /><br>
+
+\(\vec B_5\) is fixed, and I have estimates for \(\vec A\) and \(\vec D\) (I label the estimates after \(n+1\) iterations \(\vec A_n\) and \(\vec D_n\)). From the lengths of the sides, I calculate \(cos (\beta)\) and \(cos( \gamma\)) (using the cosine rule).<br>
+I know the distance \(AD\), and I know what \(B_5D\) should be. I use this value in \[(B_5A)_{n+1} = (AD)cos(\gamma_{n})+ (B_5D) cos(\beta_n)\]
+Here, \( (B_5A)_n\) is my estimate for \(B_5A\) used at iteration \(n\). <br>
+In the picture, this corresponds to the distance \(A_nD_{n,f} + D_{n,f}'B_5\).<br>
+The angles \(\beta\) and \(\gamma\) don't change much between iterations, so this calculation provides an excellent estimate.
+
+<p>
+<em>calculation of \(\vec A\)</em><br>
+<img src="./pics/pict4_find_A.jpeg" height=280/><br>
+The distances to \(\vec A\) from \(\vec B_3 \) and \(\vec B_4 \) are given, the positions of \( \vec B_3 \) and \( \vec B_4 \) also.
+Using the cosine rule, I can calculate \(\vec A_f\), the "foot" of \(\vec A\). (A line from the foot to \(\vec A\) is perpendicular to the axis  \(\vec B_4 - \vec B_3 \).)
+Pythagoras's theorem then tells me the distance (\(h_A\), \(h\) for "height") from \(\vec A\) to \(\vec{A_f}\) .
+I want to calculate an angle around the axis \(\vec B_4 - \vec B_3 \), so I create the triangle \(\triangle B_5'AA_f\) in a plane that is perpendicular to the axis. The vector from \(\vec B_5\) to \(\vec {B_5'}\) is the same as from \(\vec B_A\) to \(\vec A_f\), and equals the component of \(\vec A_f-\vec B_5\) along \( \vec B_4 - \vec B_3 \).<br>
+And Pythagoras tells us that  \(B_5'A^2 = B_5A^2 - B_5fB_5'^2\), so I know the lengths of all sides of \(\triangle AA_fB_5'\).<br>
+<img src="./pics/pict5_find_A.jpeg"height=200 /><br>
+Then I apply the cosine rule to calculate the cosine of the angle at \(\vec A_f\).
+I suppose that the sine will be positive, so \( sin(\alpha_f) = \sqrt{1-cos^2(\alpha_f)}\).<br>
+I measure the cosine along an unit vector \(\hat e_\parallel\), which is defined by the vector from \(\vec A_f\) to \(\vec B_5'\).<br>
+For the sine, I define a unit vector \(\hat e_\perp\) that is perpendicular to this vector, but still in the plane of \(\triangle B_5'AA_f\). Therefor, I take the outer product of \(\vec A_f - \vec B_5'\) and \(\vec B_4 - \vec B_3\).<br>
+Then \(\vec A = \vec{A_f} +  h_A cos(\alpha)\hat e_\parallel + h_A sin(\alpha) \hat e_\perp\) <br>
+Note that I don't calculate angles with respect to an \(x\), \(y\) or \(z\) axis, but with respect to \(\vec{A_f} - \vec{B_5'}\), so \(\vec B_5\) does not have to lie in the \(xz\)-plane.
+<p>
+<em>calculation of \(\vec C\) </em><br>
+<img src="./pics/pict6_find_C.jpeg"height=200 /><br>
+This is really similar, as the drawing shows. However, instead of the axis  \(\vec B_4 - \vec B_3 \), I take the opposite direction: \(\vec B_1 - \vec B_2 \). This ensures the correct orientation of \(\hat e_\perp\) (upward). Of course, at each iteration, the positions of \(\vec A\) and \(\vec A'\) may change.<p>
+<p>
+<em>calculation of \(\vec B\)</em><br>
+\(\vec B\) is simply on the line between \(\vec A\) and \(\vec C\), at a fixed distance:
+\(\vec B = (1-\lambda) \vec A + \lambda \vec C\) with \(\lambda = (AB/AC)\)
+<!--\(\vec B = (1-{AB\over AC}) \vec A + {AB\over AC} \vec C\) -->
+
+<P>
+<em>estimation of \(\vec D\)</em><br>
+For the first iteration, I suppose that \(\vec D\) is straight under \(\vec B\).<br>
+At later iterations, I will use the orientation of \(\hat J_{15}\) from the previous iteration.
+<p>
+<em> calculation of \(\hat J_{15}\) and \(\vec D\)</em><br>
+Look at picture 7.7. I calculate the axis \(\hat J_{13}\) from the outer product \( (\vec B_2 - \vec B_1) \times (\vec D -\vec B_5) \). <br>
+Then  \(\hat J_{15} = \hat J_{13} \times {(\vec A - \vec C) \over (AC)}\).
+And then \(\vec D - \vec B = {DB\over AB}  {(\vec A - \vec B)} \times \hat J_{15}\)<br>
+This value is used to calculate \(\vec D\), and also to estimate \(\vec D\) in the next iteration.
+
+<h3>Test the convergence</h3>
+
 <svg id="3Dscreen" width="400" height="400" viewbox="-70 -70 130 130" onmousedown='alert("No function is activated by clicking the mouse.")'>
 </svg>
-<br>
-
+</p>
+<p id="message" note="for error messages etc">(click on the picture to rotate it - note that the orientation of the axes is taken from fig. 6.7)</p><br>
 <form name="paramsForm" action='nothing.php' onChange="treatForm(); return false;">
 
 <table border="0" cellpadding="5" cellspacing="0">
 <tr>
 	<td>    R1 (from B1 to C)</td>
 	<td>    R2 (from B2 to C)</td>
+	<td>    R3 (from B3 to A)</td>
+	<td>    R4 (from B4 to A)</td>
+	<td>    R5 (from B5 to D)</td>
 </tr>
 <tr>
 	<td>	<input name="R1" value="70" min="40" max="120" type="number">	</td>
 	<td>	<input name="R2" value="70" min="40" max="120" type="number">	</td>
-</tr>
-<table border="0" cellpadding="5" cellspacing="0">
-<tr>
-	<td>    R3 (from B3 to A)</td>
-	<td>    R4 (from B4 to A)</td>
-</tr>
-<tr>
 	<td>	<input name="R3" value="75" min="40" max="120" type="number">	</td>
 	<td>	<input name="R4" value="75" min="40" max="120" type="number">	</td>
-</tr>
-</table>
-<table border="0" cellpadding="5" cellspacing="0">
-<tr>
-	<td>    R5 (from B5 to D)</td>
-</tr>
 	<td>	<input name="R5" value="85" min="40" max="160" type="number">	</td>
 </tr>
 </table>
 </form>
-<img src="./pics/groenhuis fig 7.3.png" /><br>
-(This picture was taken from <em> <a href="https://research.utwente.nl/en/persons/vincent-groenhuis/publications/">Robotic systems for breast biopsy
-using MRI and ultrasound imaging</a> ISBN: 978-90-365-4892-2</em> by Vincent Groenhuis. I thank the author for his permission) 
 
-
-<hr>
-The calculation took some programming. 
-If we know the distance from  \(B_5\) to  \(A\), we can calculate the position of \(\vec A\).<br> To know this distance, we must know the position of \(\vec D\). But \(\vec D\) can rotate around the axis \(\vec A-\vec C\), so it depends on the position of \(\vec A\).<p>
-This sounds like a circle without end!<br>
-The solution is explained <a href="stormram_explanation.html">here</a>.
-<p>
-
-<!--
-<h3>Parameters</h3>
-<p id="parameters"></p>
 <h3>Precision of the results</h3>
 <p id="precision"></p>
 <h3>Results</h3>
 <p id="text_out"></p>
---> 
+<h3>Parameters</h3>
+<p id="parameters"></p>
+
 <script type="text/javascript" src="js/MatrixUtil2.js"></script>
 <script type="text/javascript" src="js/VectorUtil.js"></script>
 <script type="text/javascript" src="js/classVector.js"></script>
@@ -207,7 +267,7 @@ function treatForm()
 			R4: form["R4"].value*1, // vectorA.minus(b4).norm(),
 			B5D :form["R5"].value*1 //  B5D
 			};
-	solve(params, false)
+	solve(params, true)
 }
 function solve(configuration, showDetails)
 {	

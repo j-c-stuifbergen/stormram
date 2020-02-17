@@ -23,10 +23,21 @@ stormram_09.html
 ===================
 stormram_10.html
 ===================
-function Solve returns values of each iteration, not only the final result
+function solveB5 returns values of each iteration, not only the final result
 
 pictures are in folder /pics
-I have added drawings and a mathematical explanation.
+I have added drawings and a mathematical explanation using MathJax.js
+
+===================
+stormram_11.html
+===================
+I moved some functions to separate files in /js
+And I added a form to change the parameters R1-R5.
+
+Explanations and numerical details have been moved to stormram_explanation.html
+stormram.html has become very short.
+
+ready to upload to my web-site!
 
 =============================
 left to do:

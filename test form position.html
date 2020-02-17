@@ -3,25 +3,7 @@
 
 <HEAD> 
 <TITLE>stormram calculation</TITLE></HEAD>
-
-<link rel="stylesheet" type="text/css" href="./index.css" /> 
-
-  <script type="text/javascript" async
-  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML">
-</script>
-
 <body>
-
-<h2>Stormram</h2>
-One of my friends (<a href="http://www.vincentgroenhuis.nl">Vincent Groenhuis</a>) has obtained a PhD for research on medical robots that can position a biopsy needle.
-<br>
-In one of the models, called "Stormram 1", the position of the needle (\(\vec E \)) depends on the positions of 5 pistons, stemming from points \(\vec B_1\) till \(\vec B_5\).<br>
-I took up the challenge to work this calculation out, and test its convergence. That could save the purchase of a Matlab licence!<br>
-<br>
-(click on the picture below to rotate it)<br>
-<svg id="3Dscreen" width="400" height="400" viewbox="-70 -70 130 130" onmousedown='alert("No function is activated by clicking the mouse.")'>
-</svg>
-<br>
 
 <form name="paramsForm" action='nothing.php' onChange="treatForm(); return false;">
 
@@ -29,49 +11,40 @@ I took up the challenge to work this calculation out, and test its convergence. 
 <tr>
 	<td>    R1 (from B1 to C)</td>
 	<td>    R2 (from B2 to C)</td>
+	<td>    R3 (from B3 to A)</td>
+	<td>    R4 (from B4 to A)</td>
+	<td>    R5 (from B5 to D)</td>
 </tr>
 <tr>
 	<td>	<input name="R1" value="70" min="40" max="120" type="number">	</td>
 	<td>	<input name="R2" value="70" min="40" max="120" type="number">	</td>
-</tr>
-<table border="0" cellpadding="5" cellspacing="0">
-<tr>
-	<td>    R3 (from B3 to A)</td>
-	<td>    R4 (from B4 to A)</td>
-</tr>
-<tr>
 	<td>	<input name="R3" value="75" min="40" max="120" type="number">	</td>
 	<td>	<input name="R4" value="75" min="40" max="120" type="number">	</td>
-</tr>
-</table>
-<table border="0" cellpadding="5" cellspacing="0">
-<tr>
-	<td>    R5 (from B5 to D)</td>
-</tr>
 	<td>	<input name="R5" value="85" min="40" max="160" type="number">	</td>
 </tr>
 </table>
 </form>
-<img src="./pics/groenhuis fig 7.3.png" /><br>
-(This picture was taken from <em> <a href="https://research.utwente.nl/en/persons/vincent-groenhuis/publications/">Robotic systems for breast biopsy
-using MRI and ultrasound imaging</a> ISBN: 978-90-365-4892-2</em> by Vincent Groenhuis. I thank the author for his permission) 
+
+<link rel="stylesheet" type="text/css" href="./index.css" /> 
+
+  <!--script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML">
+</script-->
 
 
-<hr>
-The calculation took some programming. 
-If we know the distance from  \(B_5\) to  \(A\), we can calculate the position of \(\vec A\).<br> To know this distance, we must know the position of \(\vec D\). But \(\vec D\) can rotate around the axis \(\vec A-\vec C\), so it depends on the position of \(\vec A\).<p>
-This sounds like a circle without end!<br>
-The solution is explained <a href="stormram_explanation.html">here</a>.
-<p>
+<p id="pict_out">
+<svg id="3Dscreen" width="400" height="400" viewbox="-80 -50 130 150" onmousedown='alert("No function is activated by clicking the mouse.")'>
+</svg>
+</p>
+<p id="message" note="for error messages etc">(click on the picture to rotate it - note that the orientation of the axes is taken from fig. 6.7)</p><hr>
 
-<!--
 <h3>Parameters</h3>
 <p id="parameters"></p>
 <h3>Precision of the results</h3>
 <p id="precision"></p>
 <h3>Results</h3>
 <p id="text_out"></p>
---> 
+
 <script type="text/javascript" src="js/MatrixUtil2.js"></script>
 <script type="text/javascript" src="js/VectorUtil.js"></script>
 <script type="text/javascript" src="js/classVector.js"></script>
@@ -219,7 +192,7 @@ function solve(configuration, showDetails)
 
 	if (showDetails)
 	{
-		document.getElementById("parameters").innerHTML =  settingText(configuration);
+		document.getElementById("parameters").innerHTML =  solution.settingText;
 		document.getElementById("precision").innerHTML =  performChecks(solution.settings, solution.results[solution.results.length-1]).text;
 		// document.getElementById("text_out").innerHTML =  displayText+ solution.text;
 		document.getElementById("text_out").innerHTML =  resultString(solution.settings, solution.results)

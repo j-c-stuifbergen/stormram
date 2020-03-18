@@ -183,11 +183,6 @@ function find_vec_old(vecAx, vecBasis,R,BA)
 	return result;
 }
 
-	initial = null;
-	// store in global variable initial
-	function store_estimates(vecBD,B5toA)
-	{	initial={vecBD:vecBD, B5toA:B5toA}
-	}
 /** param {number} nIterations - an integer
 * param {number} B0 - distance from B5 to the axis B1-B2 (roughly under A)
 * param {number} R - initial guess for AD
@@ -198,7 +193,6 @@ function find_vec_old(vecAx, vecBasis,R,BA)
 
 function solveABCD(params)
 {
-	var estimates = (initial==null?{vecBD:null, B5toA:null}:initial)
 	var nIterations = params.nIterations;
 	var R1 = params.R1;
 	var R2 = params.R2;
@@ -211,13 +205,13 @@ function solveABCD(params)
 	var BD = params.BD;
 	*/ 
 
-	var vecBD = (estimates.vecBD==null?new vector([0,-BD,0]):estimates.vecBD) ; // initial value, not a constant
+	var vecBD = new vector([0,-BD,0]) ; // initial value, not a constant
 
 	// output variables
 	var vecA, vecB, vecC, vecD;
 	var infoText = "<hr>";
 
-	var B5toA = (estimates.B5toA==null?B5D:estimates.B5toA); // intial estimate for BA, e.g. BA =B5D
+	var B5toA = B5D; // intial estimate for BA, e.g. BA =B5D
 	var settings = { R1:R1, R2:R2, R3:R3, R4:R4, R5: B5D,
 			 AC:AC, AB: AB, BD:BD, 
 			 b1:b1, b2:b2, b3:b3, b4:b4, b5:b5,
@@ -313,15 +307,9 @@ function solveABCD(params)
 					vecA: vecA.copy(), vecB:vecB.copy(), vecC:vecC.copy(), vecDEstimated:vecD.copy(),
 					J14:J13.copy(), J15:J15.copy()
 					};
-			vecBD_new = vecAC.op(J15).unit().times(BD)
-			if (vecBD_new.ip(vecBD)<0)
-			{ 	alert(" inverting BD at iteration "+j
-					+"\n\r BD was: "+vecBD
-					+"\n\r BD becomes: "+vecBD_new.times(-1)
-					);
-				vecBD = vecBD_new.times(-1)
-			} else
-			{ vecBD = vecBD_new
+			vecBD = vecAC.op(J15).unit().times(BD)
+			if (0<vecBD.vector[1])
+			{ vecBD = vecBD.times(-1)
 			}
 			vecBD_alt = vecAC.op(vecAC.op(vecA.minus(b5))).unit().times(BD) // perpendicular to AC, in the plane of A, C and B5
 			// estimate D		
@@ -348,7 +336,9 @@ function solveABCD(params)
 		*/
 		
 	}
-	store_estimates(vecBD,B5toA)
+
+
+
 	
 	// axis J5? is parallel to axis from B5
 	return { vecA: vecA,

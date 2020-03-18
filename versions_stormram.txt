@@ -39,6 +39,21 @@ stormram.html has become very short.
 
 ready to upload to my web-site!
 
+===================
+stormram_12.html
+===================
+I simplified the handling of CosineErrors.
+function handleCosineError was removed.
+
+function solveABCD:
+if vecBD points upward, it is multiplied by (-1)
+===================
+stormram_13.html
+===================
+created stormramSolver.js
+function solveABCD can receive an initial guess for vecBD and B5toA.
+It will not create alerts, errors are passed in the result.
+
 =============================
 left to do:
 =============================

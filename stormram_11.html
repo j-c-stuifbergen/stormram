@@ -24,8 +24,6 @@ I took up the challenge to work this calculation out, and test its convergence. 
 <br>
 
 <form name="paramsForm" action='nothing.php' onChange="treatForm(); return false;">
-<input type="text" name="B5toA" size='180'>
-<input type="text" name="vecBD">
 
 <table border="0" cellpadding="5" cellspacing="0">
 <tr>
@@ -77,8 +75,7 @@ The solution is explained <a href="stormram_explanation.html">here</a>.
 <script type="text/javascript" src="js/MatrixUtil2.js"></script>
 <script type="text/javascript" src="js/VectorUtil.js"></script>
 <script type="text/javascript" src="js/classVector.js"></script>
-<script type="text/javascript" src="js/cosineRule.js"></script>
-<script type="text/javascript" src="js/stormramSolver.js"></script>
+<script type="text/javascript" src="js/stormramSolve.js"></script>
 <script type="text/javascript" src="js/svgFunctions.js"></script>
 <script type="text/javascript" src="js/Error.js"></script>
 <script>
@@ -177,16 +174,8 @@ createStormram = function(svgObject, b1,b2,b3,b4,b5)
         }
 }
 
-var solver = new stormramSolver()
-var form = document.forms["paramsForm"];
-var formLabels = ["R1", "R2", "R3", "R4", "R5" ]
-
-setEstimates( new vector([0,-15,0]), form["R5"].value*1 )
-var stormram = new createStormram(resultSvg, solver.b1,solver.b2,solver.b3,solver.b4,solver.b5)
+var stormram = new createStormram(resultSvg, b1,b2,b3,b4,b5)
 // var displayText = "";
-// setForm([49,105,91,91,51])
-
-
 treatForm();
 
 /*var configuration = { nIterations: 30,
@@ -199,104 +188,43 @@ treatForm();
 		// AC : AC, // vectorA.minus(vectorC).norm()
 		// 
 };
+solve (configuration,true)
 */
-
-/* for debugging:
-values for R1, R2, R3, R4, R5
-*/
-function resetForm(values) // for debugging
-{
-	if (null==values)
-	{	values = [70,70,80,80,85]
-	}
-	names = [ "R1","R2","R3","R4","R5"]
-	for(i=0;i<names.length;i++)
-	{	form[names[i]].value=values[i];
-	}
-	setEstimates(new vector([0,-15,0]), form[R5].value*1 )
-
-}
 function treatForm()
 {
-	var params = { nIterations: 30}
+	var form = document.forms["paramsForm"];
 
-	formLabels.forEach(fieldName =>
-			params[fieldName] = form[fieldName].value*1 )
-
-	params.estimates = form["B5toA"].value;
-
-	// solver.estimationsObject(JSON.parse(form["vecBD"].value), form["B5toA"].value)
-/*	var params = { nIterations: 30,
+	names = [ "R1","R2","R3","R4","R5"]
+	message = ""
+	for(i=0;i<names.length;i++)
+	{message+= names[i]+": "+form[names[i]].value+" , "
+	}
+	// alert( message)
+	var params = { nIterations: 30,
 			R1: form["R1"].value*1, // vectorC.minus(b1).norm(), 
 			R2: form["R2"].value*1, //vectorC.minus(b2).norm(),
 			R3: form["R3"].value*1, // vectorA.minus(b3).norm(),
 			R4: form["R4"].value*1, // vectorA.minus(b4).norm(),
-			R5 :form["R5"].value*1, //  B5D
+			B5D :form["R5"].value*1 //  B5D
 			};
-*/
-	solve(params, true)
+	solve(params, false)
 }
-
 function solve(configuration, showDetails)
 {	
 	if (null == showDetails)
 	{	showDetails = false;
 	}	
-	var solution = solver.solveABCD(configuration);
-	
-	if (solution.OK)
-	{	stormram.update(solution.vecA,solution.vecC,solution.vecD,solution.vecB)
-		form["B5toA"].value=solution.recommendation;
-	}
-	else
-	{
-		// alert(solution.error.message);
-		alert("The previous values will be restored in the form because:\n\r"+solution.error.message);
-		setForm(solution.settings);
-	}
+	var solution = solveABCD(configuration);
+	stormram.update(solution.vecA,solution.vecC,solution.vecD,solution.vecB)
 
 	if (showDetails)
 	{
-		// document.getElementById("parameters").innerHTML =  settingText(configuration);
-		// document.getElementById("precision").innerHTML =  performChecks(solution.settings, solution.results[solution.results.length-1]).text;
-		// document.getElementById("text_out").innerHTML =  solution.text;
-		// document.getElementById("text_out").innerHTML =  resultString(solution.settings, solution.results)
+		document.getElementById("parameters").innerHTML =  settingText(configuration);
+		document.getElementById("precision").innerHTML =  performChecks(solution.settings, solution.results[solution.results.length-1]).text;
+		// document.getElementById("text_out").innerHTML =  displayText+ solution.text;
+		document.getElementById("text_out").innerHTML =  resultString(solution.settings, solution.results)
 	}
 }
-
-function setEstimates(vecBD,B5toA)
-{
-	form["B5toA"].value=solver.estimationsObject(vecBD, B5toA)
-	form["vecBD"].value=JSON.stringify(vecBD.vector)
-
-	/* var params = { nIterations: 30,
-			R1: form["R1"].value*1, // vectorC.minus(b1).norm(), 
-			R2: form["R2"].value*1, //vectorC.minus(b2).norm(),
-			R3: form["R3"].value*1, // vectorA.minus(b3).norm(),
-			R4: form["R4"].value*1, // vectorA.minus(b4).norm(),
-			R5 :form["R5"].value*1, //  B5D
-			};
-	*/
-}
-
-function setForm(params)
-{
-	formLabels.forEach(fieldName =>
-			form[fieldName].value = params[fieldName])
-
-	// form["B5toA"].value=params.estimates.B5toA
-	// form["vecBD"].value=JSON.stringify(params.estimates.arrayBD)
-
-	/* var params = { nIterations: 30,
-			R1: form["R1"].value*1, // vectorC.minus(b1).norm(), 
-			R2: form["R2"].value*1, //vectorC.minus(b2).norm(),
-			R3: form["R3"].value*1, // vectorA.minus(b3).norm(),
-			R4: form["R4"].value*1, // vectorA.minus(b4).norm(),
-			R5 :form["R5"].value*1, //  B5D
-			};
-	*/
-}
-
 /* m.b.t. de plaatjes, draaien etc:
 
 - rotation:

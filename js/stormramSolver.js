@@ -385,7 +385,7 @@ function stormramSolver()
 		result = "number of iterations: "+results.length;
 		for (var j=results.length-1; 0<=j;  j--)
 		{
-			checked = performChecks(settings, results[j])
+			checked = this.performChecks(settings, results[j])
 			 result+= "<hr>";
 			result += "iteration: "+results[j].iteration;
 			result += "<br> error: "+checked.err2;

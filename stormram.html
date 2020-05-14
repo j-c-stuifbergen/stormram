@@ -24,8 +24,7 @@ I took up the challenge to work this calculation out, and test its convergence. 
 <br>
 
 <form name="paramsForm" action='nothing.php' onChange="treatForm(); return false;">
-<input type="text" name="B5toA" size='180'>
-<input type="text" name="vecBD">
+<input type="hidden" name="estimates" size='180'>
 
 <table border="0" cellpadding="5" cellspacing="0">
 <tr>
@@ -66,14 +65,8 @@ This sounds like a circle without end!<br>
 The solution is explained <a href="stormram_explanation.html">here</a>.
 <p>
 
-<!--
-<h3>Parameters</h3>
-<p id="parameters"></p>
-<h3>Precision of the results</h3>
-<p id="precision"></p>
-<h3>Results</h3>
-<p id="text_out"></p>
---> 
+<div id="details"></div>
+
 <script type="text/javascript" src="js/MatrixUtil2.js"></script>
 <script type="text/javascript" src="js/VectorUtil.js"></script>
 <script type="text/javascript" src="js/classVector.js"></script>
@@ -82,6 +75,7 @@ The solution is explained <a href="stormram_explanation.html">here</a>.
 <script type="text/javascript" src="js/svgFunctions.js"></script>
 <script type="text/javascript" src="js/Error.js"></script>
 <script>
+var showDetails = false
 
 axisSVG = new svgObjects("3Dscreen");
 {	let axisColor = "#933";
@@ -223,9 +217,8 @@ function treatForm()
 	formLabels.forEach(fieldName =>
 			params[fieldName] = form[fieldName].value*1 )
 
-	params.estimates = form["B5toA"].value;
+	params.estimates = form["estimates"].value;
 
-	// solver.estimationsObject(JSON.parse(form["vecBD"].value), form["B5toA"].value)
 /*	var params = { nIterations: 30,
 			R1: form["R1"].value*1, // vectorC.minus(b1).norm(), 
 			R2: form["R2"].value*1, //vectorC.minus(b2).norm(),
@@ -234,19 +227,19 @@ function treatForm()
 			R5 :form["R5"].value*1, //  B5D
 			};
 */
-	solve(params, true)
+	solve(params, showDetails)
 }
 
-function solve(configuration, showDetails)
+function solve(configuration, show)
 {	
-	if (null == showDetails)
-	{	showDetails = false;
+	if (null == show)
+	{	show = false;
 	}	
 	var solution = solver.solveABCD(configuration);
 	
 	if (solution.OK)
 	{	stormram.update(solution.vecA,solution.vecC,solution.vecD,solution.vecB)
-		form["B5toA"].value=solution.recommendation;
+		form["estimates"].value=solution.recommendation;
 	}
 	else
 	{
@@ -255,19 +248,22 @@ function solve(configuration, showDetails)
 		setForm(solution.settings);
 	}
 
-	if (showDetails)
+	if (show)
 	{
-		// document.getElementById("parameters").innerHTML =  settingText(configuration);
-		// document.getElementById("precision").innerHTML =  performChecks(solution.settings, solution.results[solution.results.length-1]).text;
+		document.getElementById("details").innerHTML = 
+		'<h3>Parameters</h3>\n<p id="parameters"></p>\n'+
+		'<h3>Precision of the results</h3>\n<p id="precision"></p>\n'+
+		'<h3>Results</h3>\n<p id="text_out"></p>'
+		document.getElementById("parameters").innerHTML =  solver.settingText(configuration);
+		document.getElementById("precision").innerHTML =  solver.performChecks(solution.settings, solution.results[solution.results.length-1]).text;
 		// document.getElementById("text_out").innerHTML =  solution.text;
-		// document.getElementById("text_out").innerHTML =  resultString(solution.settings, solution.results)
+		document.getElementById("text_out").innerHTML =  solver.resultString(solution.settings, solution.results)
 	}
 }
 
 function setEstimates(vecBD,B5toA)
 {
-	form["B5toA"].value=solver.estimationsObject(vecBD, B5toA)
-	form["vecBD"].value=JSON.stringify(vecBD.vector)
+	form["estimates"].value=solver.estimationsObject(vecBD, B5toA)
 
 	/* var params = { nIterations: 30,
 			R1: form["R1"].value*1, // vectorC.minus(b1).norm(), 
@@ -284,8 +280,7 @@ function setForm(params)
 	formLabels.forEach(fieldName =>
 			form[fieldName].value = params[fieldName])
 
-	// form["B5toA"].value=params.estimates.B5toA
-	// form["vecBD"].value=JSON.stringify(params.estimates.arrayBD)
+	// form["estimates"].value=params.estimates.B5toA
 
 	/* var params = { nIterations: 30,
 			R1: form["R1"].value*1, // vectorC.minus(b1).norm(), 
@@ -297,18 +292,6 @@ function setForm(params)
 	*/
 }
 
-/* m.b.t. de plaatjes, draaien etc:
-
-- rotation:
-The projection from 3D to 2D is a parallel projection.
-So essentially, just the x and y coordinates,
-after the rotation has been performed.
-
-Rotations are the product of small rotations along y-axis (phi) 
-and x-axis (theta).
-The resulting rotation matrix is stored, and when state=="rotate"
-this matrix is updated every time when the mouse is moved.
-*/
 </script>
 
 </body>
